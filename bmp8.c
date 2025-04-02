@@ -1,6 +1,7 @@
 #include "bmp8.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 
 // Chargement image BMP
 t_bmp8 *bmp8_loadImage(const char *filename) {
@@ -92,4 +93,44 @@ void bmp8_threshold(t_bmp8 *img, int threshold) {
     for (unsigned int i = 0; i < img->dataSize; i++)
         img->data[i] = (img->data[i] >= threshold) ? 255 : 0;
 }
+
+void bmp8_applyFilter(t_bmp8 *img, float **kernel, int kernelSize) {
+    int n = kernelSize / 2;
+    unsigned char *newData = malloc(img->dataSize);
+    if (!newData) {
+        printf("Erreur allocation mémoire pour le filtrage.\n");
+        return;
+    }
+
+    // Copier l'image originale
+    for (unsigned int i = 0; i < img->dataSize; i++) {
+        newData[i] = img->data[i];
+    }
+
+    for (unsigned int y = n; y < img->height - n; y++) {
+        for (unsigned int x = n; x < img->width - n; x++) {
+            float pixel = 0.0f;
+
+            for (int ky = -n; ky <= n; ky++) {
+                for (int kx = -n; kx <= n; kx++) {
+                    int ix = x + kx;
+                    int iy = y + ky;
+                    pixel += img->data[iy * img->width + ix] * kernel[ky + n][kx + n];
+                }
+            }
+
+            if (pixel < 0) pixel = 0;
+            if (pixel > 255) pixel = 255;
+
+            newData[y * img->width + x] = (unsigned char)round(pixel);
+        }
+    }
+
+    for (unsigned int i = 0; i < img->dataSize; i++) {
+        img->data[i] = newData[i];
+    }
+
+    free(newData);
+}
+
 

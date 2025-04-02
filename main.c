@@ -2,6 +2,46 @@
 #include <stdlib.h>
 #include "bmp8.h"
 
+// Définition des kernels 3x3 pour les filtres
+float box_blur_kernel[3][3] = {
+    {1 / 9.0, 1 / 9.0, 1 / 9.0},
+    {1 / 9.0, 1 / 9.0, 1 / 9.0},
+    {1 / 9.0, 1 / 9.0, 1 / 9.0}
+};
+
+float gaussian_kernel[3][3] = {
+    {1 / 16.0, 2 / 16.0, 1 / 16.0},
+    {2 / 16.0, 4 / 16.0, 2 / 16.0},
+    {1 / 16.0, 2 / 16.0, 1 / 16.0}
+};
+
+float outline_kernel[3][3] = {
+    {-1, -1, -1},
+    {-1,  8, -1},
+    {-1, -1, -1}
+};
+
+float emboss_kernel[3][3] = {
+    {-2, -1, 0},
+    {-1,  1, 1},
+    { 0,  1, 2}
+};
+
+float sharpen_kernel[3][3] = {
+    { 0, -1,  0},
+    {-1,  5, -1},
+    { 0, -1,  0}
+};
+
+// Convertit un tableau statique [3][3] en float**
+float** toFloatPointer(float kernel[3][3]) {
+    float** ptr = malloc(3 * sizeof(float*));
+    for (int i = 0; i < 3; i++) {
+        ptr[i] = kernel[i];
+    }
+    return ptr;
+}
+
 int main() {
     t_bmp8 *img = NULL;
     char filepath[100];
@@ -23,11 +63,10 @@ int main() {
                 scanf("%s", filepath);
                 if (img) bmp8_free(img);
                 img = bmp8_loadImage(filepath);
-                if (img) {
+                if (img)
                     printf("Image loaded successfully!\n");
-                } else {
+                else
                     printf("Erreur lors du chargement de l'image.\n");
-                }
                 break;
 
             case 2:
@@ -55,43 +94,70 @@ int main() {
                 printf("6. Outline\n");
                 printf("7. Emboss\n");
                 printf("8. Sharpness\n");
-                printf("9. Return to the previous menu\n");
-                printf("\n>>> Votre choix : ");
+                printf("9. Retour\n");
+                printf(">>> Votre choix : ");
                 scanf("%d", &choixFiltre);
 
                 switch (choixFiltre) {
                     case 1:
                         bmp8_negative(img);
-                        printf("Filter applied successfully!\n");
+                        printf("Filtre negatif applique avec succes.\n");
                         break;
                     case 2: {
                         int lum;
-                        printf("Brightness value (-255 to 255): ");
+                        printf("Valeur de luminosite (-255 à 255) : ");
                         scanf("%d", &lum);
                         bmp8_brightness(img, lum);
-                        printf("Brightness adjusted successfully!\n");
+                        printf("Luminosite appliquee.\n");
                         break;
                     }
                     case 3: {
-                        int seuil;
-                        printf("Threshold (0 to 255): ");
-                        scanf("%d", &seuil);
-                        bmp8_threshold(img, seuil);
-                        printf("Threshold filter applied successfully!\n");
+                        int threshold;
+                        printf("Seuil (0 à 255) : ");
+                        scanf("%d", &threshold);
+                        bmp8_threshold(img, threshold);
+                        printf("Filtre noir et blanc applique.\n");
                         break;
                     }
-                    case 4:
-                    case 5:
-                    case 6:
-                    case 7:
-                    case 8:
-                        printf("Filtre a implementer plus tard (convolution).\n");
+                    case 4: {
+                        float** kernel = toFloatPointer(box_blur_kernel);
+                        bmp8_applyFilter(img, kernel, 3);
+                        free(kernel);
+                        printf("Filtre box blur applique.\n");
                         break;
+                    }
+                    case 5: {
+                        float** kernel = toFloatPointer(gaussian_kernel);
+                        bmp8_applyFilter(img, kernel, 3);
+                        free(kernel);
+                        printf("Filtre gaussien applique.\n");
+                        break;
+                    }
+                    case 6: {
+                        float** kernel = toFloatPointer(outline_kernel);
+                        bmp8_applyFilter(img, kernel, 3);
+                        free(kernel);
+                        printf("Filtre contour applique.\n");
+                        break;
+                    }
+                    case 7: {
+                        float** kernel = toFloatPointer(emboss_kernel);
+                        bmp8_applyFilter(img, kernel, 3);
+                        free(kernel);
+                        printf("Filtre emboss applique.\n");
+                        break;
+                    }
+                    case 8: {
+                        float** kernel = toFloatPointer(sharpen_kernel);
+                        bmp8_applyFilter(img, kernel, 3);
+                        free(kernel);
+                        printf("Filtre sharpen applique.\n");
+                        break;
+                    }
                     case 9:
-                        printf("Retour au menu principal.\n");
                         break;
                     default:
-                        printf("Choix invalide.\n");
+                        printf("Filtre invalide.\n");
                 }
                 break;
 
@@ -105,11 +171,11 @@ int main() {
 
             case 5:
                 if (img) bmp8_free(img);
-                printf("Fin du programme. Au revoir!\n");
-                exit(0);
+                printf("Fin du programme. Au revoir !\n");
+                return 0;
 
             default:
-                printf("Choix invalide, veuillez reessayer.\n");
+                printf("Choix invalide.\n");
         }
     }
 }
