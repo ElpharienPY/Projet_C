@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "bmp8.h"
 
-// Définition des kernels 3x3 pour les filtres
+// 3x3 filter kernels
 float box_blur_kernel[3][3] = {
     {1 / 9.0, 1 / 9.0, 1 / 9.0},
     {1 / 9.0, 1 / 9.0, 1 / 9.0},
@@ -33,7 +33,7 @@ float sharpen_kernel[3][3] = {
     { 0, -1,  0}
 };
 
-// Convertit un tableau statique [3][3] en float**
+// Helper to convert static 2D array to float**
 float** toFloatPointer(float kernel[3][3]) {
     float** ptr = malloc(3 * sizeof(float*));
     for (int i = 0; i < 3; i++) {
@@ -43,139 +43,155 @@ float** toFloatPointer(float kernel[3][3]) {
 }
 
 int main() {
-    t_bmp8 *img = NULL;
-    char filepath[100];
-    int choix, choixFiltre;
+    t_bmp8 *img = NULL;         // Pointer to the loaded image
+    char filepath[100];         // To store image path input
+    int choix, choixFiltre;     // Main menu and filter menu choices
 
     while (1) {
-        printf("\nVeuillez choisir une option :\n");
-        printf("1. Ouvrir une image\n");
-        printf("2. Sauvegarder une image\n");
-        printf("3. Appliquer un filtre\n");
-        printf("4. Afficher les informations de l'image\n");
-        printf("5. Quitter\n");
-        printf("\n>>> Votre choix : ");
-        scanf("%d", &choix);
+        // Display the main menu
+        printf("\nPlease choose an option:\n");
+        printf("1. Open an image\n");
+        printf("2. Save an image\n");
+        printf("3. Apply a filter\n");
+        printf("4. Display image information\n");
+        printf("5. Quit\n");
+        printf("\n>>> Your choice: ");
+
+        // Read user input safely (avoid infinite loop) ---
+        char input[10];
+        fgets(input, sizeof(input), stdin);
+        if (sscanf(input, "%d", &choix) != 1 || choix < 1 || choix > 5) {
+            printf("Please enter a valid option (1 to 5).\n");
+            continue;
+        }
 
         switch (choix) {
-            case 1:
+            case 1: // Open an image
                 printf("File path: ");
                 scanf("%s", filepath);
+                getchar(); // Clear newline
                 if (img) bmp8_free(img);
                 img = bmp8_loadImage(filepath);
                 if (img)
                     printf("Image loaded successfully!\n");
                 else
-                    printf("Erreur lors du chargement de l'image.\n");
+                    printf("Error loading image.\n");
                 break;
 
-            case 2:
+            case 2: // Save an image
                 if (!img) {
-                    printf("Veuillez charger une image avant.\n");
+                    printf("Please load an image first.\n");
                     break;
                 }
                 printf("File path: ");
                 scanf("%s", filepath);
+                getchar(); // Clear newline
                 bmp8_saveImage(filepath, img);
                 printf("Image saved successfully!\n");
                 break;
 
-            case 3:
+            case 3: // Apply a filter
                 if (!img) {
-                    printf("Veuillez charger une image avant.\n");
+                    printf("Please load an image first.\n");
                     break;
                 }
-                printf("\nVeuillez choisir un filtre :\n");
+
+                // Display the filter menu
+                printf("\nChoose a filter to apply:\n");
                 printf("1. Negative\n");
                 printf("2. Brightness\n");
                 printf("3. Black and white\n");
                 printf("4. Box Blur\n");
-                printf("5. Gaussian blur\n");
+                printf("5. Gaussian Blur\n");
                 printf("6. Outline\n");
                 printf("7. Emboss\n");
-                printf("8. Sharpness\n");
-                printf("9. Retour\n");
-                printf(">>> Votre choix : ");
-                scanf("%d", &choixFiltre);
+                printf("8. Sharpen\n");
+                printf("9. Return to main menu\n");
+                printf(">>> Your choice: ");
+
+                char filtreInput[10];
+                fgets(filtreInput, sizeof(filtreInput), stdin);
+                if (sscanf(filtreInput, "%d", &choixFiltre) != 1 || choixFiltre < 1 || choixFiltre > 9) {
+                    printf("Please enter a valid filter option (1 to 9).\n");
+                    break;
+                }
 
                 switch (choixFiltre) {
                     case 1:
                         bmp8_negative(img);
-                        printf("Filtre negatif applique avec succes.\n");
+                        printf("Negative filter applied.\n");
                         break;
                     case 2: {
                         int lum;
-                        printf("Valeur de luminosite (-255 à 255) : ");
+                        printf("Brightness value (-255 to 255): ");
                         scanf("%d", &lum);
+                        getchar();
                         bmp8_brightness(img, lum);
-                        printf("Luminosite appliquee.\n");
+                        printf("Brightness adjusted.\n");
                         break;
                     }
                     case 3: {
                         int threshold;
-                        printf("Seuil (0 à 255) : ");
+                        printf("Threshold value (0 to 255): ");
                         scanf("%d", &threshold);
+                        getchar();
                         bmp8_threshold(img, threshold);
-                        printf("Filtre noir et blanc applique.\n");
+                        printf("Threshold filter applied.\n");
                         break;
                     }
                     case 4: {
                         float** kernel = toFloatPointer(box_blur_kernel);
                         bmp8_applyFilter(img, kernel, 3);
                         free(kernel);
-                        printf("Filtre box blur applique.\n");
+                        printf("Box blur applied.\n");
                         break;
                     }
                     case 5: {
                         float** kernel = toFloatPointer(gaussian_kernel);
                         bmp8_applyFilter(img, kernel, 3);
                         free(kernel);
-                        printf("Filtre gaussien applique.\n");
+                        printf("Gaussian blur applied.\n");
                         break;
                     }
                     case 6: {
                         float** kernel = toFloatPointer(outline_kernel);
                         bmp8_applyFilter(img, kernel, 3);
                         free(kernel);
-                        printf("Filtre contour applique.\n");
+                        printf("Outline filter applied.\n");
                         break;
                     }
                     case 7: {
                         float** kernel = toFloatPointer(emboss_kernel);
                         bmp8_applyFilter(img, kernel, 3);
                         free(kernel);
-                        printf("Filtre emboss applique.\n");
+                        printf("Emboss filter applied.\n");
                         break;
                     }
                     case 8: {
                         float** kernel = toFloatPointer(sharpen_kernel);
                         bmp8_applyFilter(img, kernel, 3);
                         free(kernel);
-                        printf("Filtre sharpen applique.\n");
+                        printf("Sharpen filter applied.\n");
                         break;
                     }
                     case 9:
+                        // Go back to main menu
                         break;
-                    default:
-                        printf("Filtre invalide.\n");
                 }
                 break;
 
-            case 4:
+            case 4: // Display image info
                 if (!img) {
-                    printf("Veuillez charger une image avant.\n");
+                    printf("Please load an image first.\n");
                     break;
                 }
                 bmp8_printInfo(img);
                 break;
 
-            case 5:
+            case 5: // Exit
                 if (img) bmp8_free(img);
-                printf("Fin du programme. Au revoir !\n");
+                printf("Program exited. Goodbye!\n");
                 return 0;
-
-            default:
-                printf("Choix invalide.\n");
         }
     }
 }
