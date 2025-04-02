@@ -1,0 +1,3 @@
+THIS FILE IS CREATED TO RECEIVE IMAGES AFTER APPLY FILTERS OR OTHER THINGS
+
+C:\Users\rapha\CLionProjects\Projet_C\output\name_file.bmp
