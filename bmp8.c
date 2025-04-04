@@ -1,230 +1,148 @@
+#include "bmp8.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include "bmp8.h"
+#include <math.h>
 
-// Predefined 3x3 convolution kernels used for different filters
-// Float constants used to avoid narrowing conversion warnings
-float box_blur_kernel[3][3] = {
-    {1.0f / 9.0f, 1.0f / 9.0f, 1.0f / 9.0f},
-    {1.0f / 9.0f, 1.0f / 9.0f, 1.0f / 9.0f},
-    {1.0f / 9.0f, 1.0f / 9.0f, 1.0f / 9.0f}
-};
-
-float gaussian_kernel[3][3] = {
-    {1.0f / 16.0f, 2.0f / 16.0f, 1.0f / 16.0f},
-    {2.0f / 16.0f, 4.0f / 16.0f, 2.0f / 16.0f},
-    {1.0f / 16.0f, 2.0f / 16.0f, 1.0f / 16.0f}
-};
-
-float outline_kernel[3][3] = {
-    {-1.0f, -1.0f, -1.0f},
-    {-1.0f,  8.0f, -1.0f},
-    {-1.0f, -1.0f, -1.0f}
-};
-
-float emboss_kernel[3][3] = {
-    {-2.0f, -1.0f,  0.0f},
-    {-1.0f,  1.0f,  1.0f},
-    { 0.0f,  1.0f,  2.0f}
-};
-
-float sharpen_kernel[3][3] = {
-    { 0.0f, -1.0f,  0.0f},
-    {-1.0f,  5.0f, -1.0f},
-    { 0.0f, -1.0f,  0.0f}
-};
-
-// Converts a static 3x3 kernel into a float**
-// Allocates an array of pointers that point to each row of the static kernel
-float** toFloatPointer(float kernel[3][3]) {
-    float** ptr = malloc(3 * sizeof(float*));
-    if (!ptr) {
-        printf("Memory allocation error in toFloatPointer.\n");
+// Load an 8-bit grayscale BMP image from disk
+t_bmp8 *bmp8_loadImage(const char *filename) {
+    FILE *f = fopen(filename, "rb"); // Open file in binary read mode
+    if (!f) {
+        printf("Unable to open file %s\n", filename);
         return NULL;
     }
-    for (int i = 0; i < 3; i++) {
-        ptr[i] = kernel[i]; // Just point to each row; no deep copy
+
+    t_bmp8 *img = malloc(sizeof(t_bmp8)); // Allocate memory for image structure
+    if (!img) {
+        fclose(f);
+        printf("Memory allocation error.\n");
+        return NULL;
     }
-    return ptr;
+
+    // Read the 54-byte BMP header
+    fread(img->header, sizeof(unsigned char), 54, f);
+
+    // Extract image metadata from header
+    img->width      = *(unsigned int *)&img->header[18];  // Image width in pixels
+    img->height     = *(unsigned int *)&img->header[22];  // Image height in pixels
+    img->colorDepth = *(unsigned short *)&img->header[28]; // Bits per pixel (must be 8)
+    img->dataSize   = *(unsigned int *)&img->header[34];  // Size of pixel data in bytes
+
+    // Ensure the image is in 8-bit grayscale format
+    if (img->colorDepth != 8) {
+        printf("Image is not in 8-bit grayscale format.\n");
+        free(img);
+        fclose(f);
+        return NULL;
+    }
+
+    // Read the color palette (1024 bytes = 256 colors × 4 bytes per entry)
+    fread(img->colorTable, sizeof(unsigned char), 1024, f);
+
+    // Allocate memory for pixel data
+    img->data = malloc(img->dataSize);
+    fread(img->data, sizeof(unsigned char), img->dataSize, f); // Read pixel data
+
+    fclose(f); // Close the file
+    return img;
 }
 
-int main(void) {
-    t_bmp8 *img = NULL;           // Holds the currently loaded image
-    char filepath[100];           // Stores the user-provided file path
-    int choix = 0, choixFiltre = 0;  // Menu selections
+// Save an 8-bit grayscale BMP image to disk
+void bmp8_saveImage(const char *filename, t_bmp8 *img) {
+    FILE *f = fopen(filename, "wb"); // Open file in binary write mode
+    if (!f) {
+        printf("Unable to create file %s\n", filename);
+        return;
+    }
 
-    while (1) {
-        // Display the main menu options
-        printf("\nPlease choose an option:\n");
-        printf("1. Open an image\n");
-        printf("2. Save an image\n");
-        printf("3. Apply a filter\n");
-        printf("4. Display image information\n");
-        printf("5. Quit\n");
-        printf("\n>>> Your choice: ");
+    // Write the BMP header, color palette, and pixel data
+    fwrite(img->header, sizeof(unsigned char), 54, f);
+    fwrite(img->colorTable, sizeof(unsigned char), 1024, f);
+    fwrite(img->data, sizeof(unsigned char), img->dataSize, f);
 
-        // Safely read user input and validate it
-        char input[10];
-        if (fgets(input, sizeof(input), stdin) == NULL) {
-            printf("Input error.\n");
-            break;
-        }
-        if (sscanf(input, "%d", &choix) != 1 || choix < 1 || choix > 5) {
-            printf("Please enter a valid option (1 to 5).\n");
-            continue;
-        }
+    fclose(f); // Close the file
+}
 
-        switch (choix) {
-            case 1: // Open an image
-                printf("File path: ");
-                scanf("%s", filepath);
-                getchar(); // Clear the newline character from the buffer
+// Free the memory allocated for an image
+void bmp8_free(t_bmp8 *img) {
+    if (img) {
+        free(img->data); // Free the pixel data
+        free(img);       // Free the structure itself
+    }
+}
 
-                if (img) bmp8_free(img); // Free previously loaded image
-                img = bmp8_loadImage(filepath);
+// Print image information (dimensions, depth, size)
+void bmp8_printInfo(t_bmp8 *img) {
+    printf("\nImage information:\n");
+    printf("Width       : %u pixels\n", img->width);
+    printf("Height      : %u pixels\n", img->height);
+    printf("Color depth : %u bits\n", img->colorDepth);
+    printf("Data size   : %u bytes\n", img->dataSize);
+}
 
-                if (img)
-                    printf("Image loaded successfully!\n");
-                else
-                    printf("Error loading image.\n");
-                break;
+// Apply a negative filter to the image (invert pixel values)
+void bmp8_negative(t_bmp8 *img) {
+    for (unsigned int i = 0; i < img->dataSize; i++) {
+        img->data[i] = 255 - img->data[i];
+    }
+}
 
-            case 2: // Save the currently loaded image
-                if (!img) {
-                    printf("Please load an image first.\n");
-                    break;
+// Adjust the image brightness by adding a value to each pixel
+void bmp8_brightness(t_bmp8 *img, int value) {
+    for (unsigned int i = 0; i < img->dataSize; i++) {
+        int temp = img->data[i] + value; // Add brightness value
+        if (temp > 255) temp = 255;      // Clamp to upper bound
+        else if (temp < 0) temp = 0;     // Clamp to lower bound
+        img->data[i] = (unsigned char)temp;
+    }
+}
+
+// Convert the image to black and white using a given threshold
+void bmp8_threshold(t_bmp8 *img, int threshold) {
+    for (unsigned int i = 0; i < img->dataSize; i++) {
+        img->data[i] = (img->data[i] >= threshold) ? 255 : 0;
+    }
+}
+
+// Apply a convolution filter (e.g. blur, sharpen, etc.)
+void bmp8_applyFilter(t_bmp8 *img, float **kernel, int kernelSize) {
+    int n = kernelSize / 2; // Distance from center of the kernel
+    unsigned char *newData = malloc(img->dataSize); // Output pixel data
+
+    if (!newData) {
+        printf("Memory allocation error for filtering.\n");
+        return;
+    }
+
+    // Copy original image into newData to preserve border pixels
+    for (unsigned int i = 0; i < img->dataSize; i++) {
+        newData[i] = img->data[i];
+    }
+
+    // Apply convolution (excluding border pixels)
+    for (unsigned int y = n; y < img->height - n; y++) {
+        for (unsigned int x = n; x < img->width - n; x++) {
+            float pixel = 0.0f;
+
+            // Loop over kernel
+            for (int ky = -n; ky <= n; ky++) {
+                for (int kx = -n; kx <= n; kx++) {
+                    int ix = x + kx; // x position of neighbor
+                    int iy = y + ky; // y position of neighbor
+                    pixel += img->data[iy * img->width + ix] * kernel[ky + n][kx + n];
                 }
-                printf("File path: ");
-                scanf("%s", filepath);
-                getchar(); // Clear newline
+            }
 
-                bmp8_saveImage(filepath, img);
-                printf("Image saved successfully!\n");
-                break;
-
-            case 3: // Apply a filter
-                if (!img) {
-                    printf("Please load an image first.\n");
-                    break;
-                }
-
-                // Display the list of available filters
-                printf("\nChoose a filter to apply:\n");
-                printf("1. Negative\n");
-                printf("2. Brightness\n");
-                printf("3. Black and white\n");
-                printf("4. Box Blur\n");
-                printf("5. Gaussian Blur\n");
-                printf("6. Outline\n");
-                printf("7. Emboss\n");
-                printf("8. Sharpen\n");
-                printf("9. Return to main menu\n");
-                printf(">>> Your choice: ");
-
-                // Validate filter input
-                char filtreInput[10];
-                if (fgets(filtreInput, sizeof(filtreInput), stdin) == NULL) {
-                    printf("Input error.\n");
-                    break;
-                }
-                if (sscanf(filtreInput, "%d", &choixFiltre) != 1 || choixFiltre < 1 || choixFiltre > 9) {
-                    printf("Please enter a valid filter option (1 to 9).\n");
-                    break;
-                }
-
-                // Apply the selected filter
-                switch (choixFiltre) {
-                    case 1:
-                        bmp8_negative(img);
-                        printf("Negative filter applied.\n");
-                        break;
-                    case 2: {
-                        int lum = 0;
-                        printf("Brightness value (-255 to 255): ");
-                        scanf("%d", &lum);
-                        getchar();
-                        bmp8_brightness(img, lum);
-                        printf("Brightness adjusted.\n");
-                        break;
-                    }
-                    case 3: {
-                        int threshold = 0;
-                        printf("Threshold value (0 to 255): ");
-                        scanf("%d", &threshold);
-                        getchar();
-                        bmp8_threshold(img, threshold);
-                        printf("Threshold filter applied.\n");
-                        break;
-                    }
-                    case 4: {
-                        float** kernel = toFloatPointer(box_blur_kernel);
-                        if (kernel != NULL) {
-                            bmp8_applyFilter(img, kernel, 3);
-                            free(kernel);
-                        }
-                        printf("Box blur applied.\n");
-                        break;
-                    }
-                    case 5: {
-                        float** kernel = toFloatPointer(gaussian_kernel);
-                        if (kernel != NULL) {
-                            bmp8_applyFilter(img, kernel, 3);
-                            free(kernel);
-                        }
-                        printf("Gaussian blur applied.\n");
-                        break;
-                    }
-                    case 6: {
-                        float** kernel = toFloatPointer(outline_kernel);
-                        if (kernel != NULL) {
-                            bmp8_applyFilter(img, kernel, 3);
-                            free(kernel);
-                        }
-                        printf("Outline filter applied.\n");
-                        break;
-                    }
-                    case 7: {
-                        float** kernel = toFloatPointer(emboss_kernel);
-                        if (kernel != NULL) {
-                            bmp8_applyFilter(img, kernel, 3);
-                            free(kernel);
-                        }
-                        printf("Emboss filter applied.\n");
-                        break;
-                    }
-                    case 8: {
-                        float** kernel = toFloatPointer(sharpen_kernel);
-                        if (kernel != NULL) {
-                            bmp8_applyFilter(img, kernel, 3);
-                            free(kernel);
-                        }
-                        printf("Sharpen filter applied.\n");
-                        break;
-                    }
-                    case 9:
-                        // Return to main menu
-                        break;
-                }
-                break;
-
-            case 4: // Display image properties (width, height, etc.)
-                if (!img) {
-                    printf("Please load an image first.\n");
-                    break;
-                }
-                bmp8_printInfo(img);
-                break;
-
-            case 5: // Exit the program cleanly
-                if (img) bmp8_free(img);
-                printf("Program exited. Goodbye!\n");
-                return 0;
-
-            default:
-                // Should never be reached due to validation
-                break;
+            // Clamp and assign result
+            if (pixel < 0.0f) pixel = 0.0f;
+            if (pixel > 255.0f) pixel = 255.0f;
+            newData[y * img->width + x] = (unsigned char)roundf(pixel);
         }
     }
 
-    return 0;
+    // Copy result back to original image
+    for (unsigned int i = 0; i < img->dataSize; i++) {
+        img->data[i] = newData[i];
+    }
+
+    free(newData); // Free the temporary buffer
 }
