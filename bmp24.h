@@ -1,8 +1,7 @@
 #ifndef BMP24_H
 #define BMP24_H
-
 #include <stdint.h>
-#include <stdio.h>
+
 
 typedef struct {
     uint8_t red;
@@ -17,16 +16,16 @@ typedef struct {
     t_pixel **data;
 } t_bmp24;
 
-// Allocation / Libération
+// Allocation
 t_pixel **bmp24_allocateDataPixels(int width, int height);
 void bmp24_freeDataPixels(t_pixel **pixels, int height);
 void bmp24_free(t_bmp24 *img);
 
-// Chargement / Sauvegarde
+// Load / Save
 t_bmp24 *bmp24_loadImage(const char *filename);
 void bmp24_saveImage(t_bmp24 *img, const char *filename);
 
-// Filtres simples
+// Simples filters
 void bmp24_negative(t_bmp24 *img);
 void bmp24_grayscale(t_bmp24 *img);
 void bmp24_brightness(t_bmp24 *img, int value);

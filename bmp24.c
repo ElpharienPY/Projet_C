@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <math.h>
 
-// === Allocation / Libération ===
+// Allocate a 2D pixel matrix
 t_pixel **bmp24_allocateDataPixels(int width, int height) {
     t_pixel **pixels = malloc(height * sizeof(t_pixel *));
     if (!pixels) return NULL;
@@ -18,11 +18,14 @@ t_pixel **bmp24_allocateDataPixels(int width, int height) {
     return pixels;
 }
 
+// Free memory for a 2D pixel matrix
 void bmp24_freeDataPixels(t_pixel **pixels, int height) {
     for (int i = 0; i < height; i++) free(pixels[i]);
     free(pixels);
 }
 
+
+// Free the whole BMP
 void bmp24_free(t_bmp24 *img) {
     if (img) {
         bmp24_freeDataPixels(img->data, img->height);
@@ -30,7 +33,7 @@ void bmp24_free(t_bmp24 *img) {
     }
 }
 
-// === Chargement BMP 24 bits (lecture manuelle des en-têtes) ===
+// Load a BMP 24-bit image (manual header parsing)
 t_bmp24 *bmp24_loadImage(const char *filename) {
     FILE *f = fopen(filename, "rb");
     if (!f) {
@@ -38,13 +41,14 @@ t_bmp24 *bmp24_loadImage(const char *filename) {
         return NULL;
     }
 
-    // Lecture des champs critiques
+    // Manually read only the essential header fields
     uint16_t type;
     int32_t width, height;
     uint16_t bits;
     uint32_t compression, offset;
 
     fseek(f, 0, SEEK_SET);
+    // BMP signature
     fread(&type, sizeof(uint16_t), 1, f);
 
     fseek(f, 18, SEEK_SET);
@@ -60,13 +64,14 @@ t_bmp24 *bmp24_loadImage(const char *filename) {
     fseek(f, 10, SEEK_SET);
     fread(&offset, sizeof(uint32_t), 1, f);
 
+    // Validate BMP 24-bit uncompressed format
     if (type != 0x4D42 || bits != 24 || compression != 0) {
         printf("Fichier incompatible. BMP 24 bits non compressé requis.\n");
         fclose(f);
         return NULL;
     }
 
-    // Allocation
+    // Allocate the structure
     t_bmp24 *img = malloc(sizeof(t_bmp24));
     img->width = width;
     img->height = height;
@@ -78,7 +83,7 @@ t_bmp24 *bmp24_loadImage(const char *filename) {
         return NULL;
     }
 
-    // Lecture des pixels
+    // // Read pixel data starting at "offset", line by line (a big issues in the process of the bm24.c
     fseek(f, offset, SEEK_SET);
     int padding = (4 - (width * 3) % 4) % 4;
 
@@ -90,6 +95,7 @@ t_bmp24 *bmp24_loadImage(const char *filename) {
             img->data[height - 1 - y][x].green = bgr[1];
             img->data[height - 1 - y][x].red = bgr[2];
         }
+        // skip padding bytes
         fseek(f, padding, SEEK_CUR);
     }
 
@@ -98,7 +104,7 @@ t_bmp24 *bmp24_loadImage(const char *filename) {
     return img;
 }
 
-// === Sauvegarde d'une image BMP 24 bits ===
+// Save (for 24-bit)
 void bmp24_saveImage(t_bmp24 *img, const char *filename) {
     FILE *f = fopen(filename, "wb");
     if (!f) {
@@ -106,12 +112,13 @@ void bmp24_saveImage(t_bmp24 *img, const char *filename) {
         return;
     }
 
-    // Écriture header (14 octets)
+    // // Write BMP header (14 bytes)
     uint16_t type = 0x4D42;
     uint32_t offset = 54;
     uint32_t size = offset + (img->width * 3 + (4 - (img->width * 3 % 4)) % 4) * img->height;
     uint16_t reserved = 0;
 
+    // Write BMP info header (40 bytes)
     fwrite(&type, sizeof(uint16_t), 1, f);
     fwrite(&size, sizeof(uint32_t), 1, f);
     fwrite(&reserved, sizeof(uint16_t), 1, f);
@@ -135,10 +142,12 @@ void bmp24_saveImage(t_bmp24 *img, const char *filename) {
     fwrite(&imageSize, sizeof(uint32_t), 1, f);
     fwrite(&resolution, sizeof(int32_t), 1, f);
     fwrite(&resolution, sizeof(int32_t), 1, f);
-    fwrite(&compression, sizeof(uint32_t), 1, f); // ncolors = 0
-    fwrite(&compression, sizeof(uint32_t), 1, f); // important colors = 0
+    // ncolors = 0
+    fwrite(&compression, sizeof(uint32_t), 1, f);
+    // important colors = 0
+    fwrite(&compression, sizeof(uint32_t), 1, f);
 
-    // Écriture pixels
+    // Write pixels
     int padding = (4 - (img->width * 3) % 4) % 4;
     unsigned char pad[3] = {0, 0, 0};
 
@@ -158,7 +167,8 @@ void bmp24_saveImage(t_bmp24 *img, const char *filename) {
     printf("Image enregistrée dans %s\n", filename);
 }
 
-// === Filtres simples ===
+// Filters: simple operations
+// Invert color
 void bmp24_negative(t_bmp24 *img) {
     for (int y = 0; y < img->height; y++) {
         for (int x = 0; x < img->width; x++) {
@@ -170,6 +180,7 @@ void bmp24_negative(t_bmp24 *img) {
     }
 }
 
+// Convert to grayscale (average of RGB channels)
 void bmp24_grayscale(t_bmp24 *img) {
     for (int y = 0; y < img->height; y++) {
         for (int x = 0; x < img->width; x++) {
@@ -180,6 +191,7 @@ void bmp24_grayscale(t_bmp24 *img) {
     }
 }
 
+// Adjust brightness
 void bmp24_brightness(t_bmp24 *img, int value) {
     for (int y = 0; y < img->height; y++) {
         for (int x = 0; x < img->width; x++) {
@@ -191,7 +203,7 @@ void bmp24_brightness(t_bmp24 *img, int value) {
     }
 }
 
-// === Convolution générique ===
+// Generic convolution
 t_pixel bmp24_convolution(t_bmp24 *img, int x, int y, float **kernel, int kernelSize) {
     int n = kernelSize / 2;
     float r = 0, g = 0, b = 0;
@@ -231,7 +243,7 @@ void bmp24_applyFilter(t_bmp24 *img, float **kernel, int kernelSize) {
     img->data = newData;
 }
 
-// === Filtres prédéfinis ===
+// Advanced filters
 void bmp24_boxBlur(t_bmp24 *img) {
     float box[3][3] = {
         {1/9.f, 1/9.f, 1/9.f},

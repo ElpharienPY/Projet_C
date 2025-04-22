@@ -4,7 +4,7 @@
 #include "bmp8.h"
 #include "bmp24.h"
 
-// === Detect BMP bit depth (8 or 24) ===
+// Detect BMP bit depth (8 or 24)
 int detectBitDepth(const char *filename) {
     FILE *f = fopen(filename, "rb");
     if (!f) return -1;
@@ -15,7 +15,7 @@ int detectBitDepth(const char *filename) {
     return (bits == 8 || bits == 24) ? bits : -1;
 }
 
-// === Filter menu for 8-bit images ===
+// Filter menu for 8-bit images
 void applyFilters8(t_bmp8 *img) {
     int choice;
     while (1) {
@@ -56,13 +56,13 @@ void applyFilters8(t_bmp8 *img) {
             case 6: bmp8_outline(img); printf("Outline filter applied.\n"); break;
             case 7: bmp8_emboss(img); printf("Emboss filter applied.\n"); break;
             case 8: bmp8_sharpen(img); printf("Sharpen filter applied.\n"); break;
-            case 9: return;
+            case 9: return; // Exit filter menu
             default: printf("Invalid option.\n");
         }
     }
 }
 
-// === Filter menu for 24-bit images ===
+// Filter menu for 24-bit images
 void applyFilters24(t_bmp24 *img) {
     int choice;
     while (1) {
@@ -103,7 +103,7 @@ void applyFilters24(t_bmp24 *img) {
 }
 
 
-// === Main ===
+//Main
 int main(void) {
     char filepath[256];
     int choice ;
@@ -113,6 +113,7 @@ int main(void) {
     t_bmp24 *img24 = NULL;
 
     while (1) {
+        // Display the main menu
         printf("\nPlease choose an option:\n");
         printf("1. Open an image\n");
         printf("2. Save image\n");
@@ -121,6 +122,7 @@ int main(void) {
         printf("5. Quit\n");
         printf(">>> Your choice: ");
 
+        // Read user input safely
         char input[10];
         fgets(input, sizeof(input), stdin);
         if (sscanf(input, "%d", &choice) != 1) {
@@ -130,13 +132,18 @@ int main(void) {
 
         switch (choice) {
             case 1: {
+                // Open an image file
                 printf("Enter file path: ");
                 scanf("%255s", filepath); getchar();
 
+                // Detect BMP type (that was difficult to add the 2nd part, deepseek help to detect)
                 bits = detectBitDepth(filepath);
+
+                // Free any previously loaded image
                 if (img8) { bmp8_free(img8); img8 = NULL; }
                 if (img24) { bmp24_free(img24); img24 = NULL; }
 
+                // Load based on format
                 if (bits == 8) {
                     img8 = bmp8_loadImage(filepath);
                     if (!img8) {
@@ -152,10 +159,11 @@ int main(void) {
                         bits = -1;
                     } else {
                         printf("24-bit image loaded successfully.\n");
-                        printf("DEBUG – First pixel R=%d G=%d B=%d\n", //use to solve many difficulties
-               img24->data[0][0].red,
-               img24->data[0][0].green,
-               img24->data[0][0].blue);
+                        //Debug: use to solve many difficulties (show first pixel RGB values)
+                        printf("DEBUG – First pixel R=%d G=%d B=%d\n",
+                        img24->data[0][0].red,
+                        img24->data[0][0].green,
+                        img24->data[0][0].blue);
                     }
                 } else {
                     printf("Unsupported format. Only 8-bit and 24-bit BMP files are supported.\n");
@@ -164,6 +172,7 @@ int main(void) {
             }
 
             case 2: {
+                // Save the current image
                 if (bits == 8 && img8) {
                     printf("Enter output file name: ");
                     scanf("%255s", filepath); getchar();
@@ -179,12 +188,14 @@ int main(void) {
             }
 
             case 3:
+                // Apply filter based on image type
                 if (bits == 8 && img8) applyFilters8(img8);
                 else if (bits == 24 && img24) applyFilters24(img24);
                 else printf("Please load an image first.\n");
                 break;
 
             case 4:
+                // Display image information
                 if (bits == 8 && img8) bmp8_printInfo(img8);
                 else if (bits == 24 && img24) {
                     printf("Image information:\n");
@@ -195,6 +206,7 @@ int main(void) {
                 break;
 
             case 5:
+                // Clean exit
                 if (img8) bmp8_free(img8);
                 if (img24) bmp24_free(img24);
                 printf("Program exited. Goodbye!\n");

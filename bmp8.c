@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 
-// === Chargement image BMP 8 bits ===
+// Load 8-bit BMP image from file
 t_bmp8 *bmp8_loadImage(const char *filename) {
     FILE *f = fopen(filename, "rb");
     if (!f) {
@@ -17,12 +17,16 @@ t_bmp8 *bmp8_loadImage(const char *filename) {
         return NULL;
     }
 
+    // Read the 54-byte BMP header
     fread(img->header, sizeof(unsigned char), 54, f);
+
+    // Extract image dimensions and metadata from header
     img->width = *(unsigned int *)&img->header[18];
     img->height = *(unsigned int *)&img->header[22];
     img->colorDepth = *(unsigned short *)&img->header[28];
     img->dataSize = *(unsigned int *)&img->header[34];
 
+    // Ensure it is a true 8-bit grayscale BMP
     if (img->colorDepth != 8) {
         printf("Only 8-bit grayscale BMP files are supported.\n");
         fclose(f);
@@ -30,8 +34,10 @@ t_bmp8 *bmp8_loadImage(const char *filename) {
         return NULL;
     }
 
+    // Read color table (1024 bytes for 256 shades of gray)
     fread(img->colorTable, sizeof(unsigned char), 1024, f);
 
+    // Read image pixel data
     img->data = malloc(img->dataSize);
     fread(img->data, sizeof(unsigned char), img->dataSize, f);
 
@@ -39,7 +45,7 @@ t_bmp8 *bmp8_loadImage(const char *filename) {
     return img;
 }
 
-// === Sauvegarde ===
+// Save image
 void bmp8_saveImage(const char *filename, t_bmp8 *img) {
     FILE *f = fopen(filename, "wb");
     if (!f) {
@@ -47,6 +53,7 @@ void bmp8_saveImage(const char *filename, t_bmp8 *img) {
         return;
     }
 
+    // Write header, color table, and pixel data
     fwrite(img->header, sizeof(unsigned char), 54, f);
     fwrite(img->colorTable, sizeof(unsigned char), 1024, f);
     fwrite(img->data, sizeof(unsigned char), img->dataSize, f);
@@ -54,7 +61,7 @@ void bmp8_saveImage(const char *filename, t_bmp8 *img) {
     fclose(f);
 }
 
-// === Libération mémoire ===
+// Free all memory used by the image
 void bmp8_free(t_bmp8 *img) {
     if (img) {
         free(img->data);
@@ -62,7 +69,7 @@ void bmp8_free(t_bmp8 *img) {
     }
 }
 
-// === Infos ===
+// Information, dimension...
 void bmp8_printInfo(const t_bmp8 *img) {
     printf("\nImage information:\n");
     printf("Width        : %u pixels\n", img->width);
@@ -71,13 +78,15 @@ void bmp8_printInfo(const t_bmp8 *img) {
     printf("Image Size   : %u bytes\n", img->dataSize);
 }
 
-// === Filtres simples ===
+// Negative filter
 void bmp8_negative(t_bmp8 *img) {
     for (unsigned int i = 0; i < img->dataSize; i++) {
+        // Inverts pixel intensity
         img->data[i] = 255 - img->data[i];
     }
 }
 
+// Brightness filter
 void bmp8_brightness(t_bmp8 *img, int value) {
     for (unsigned int i = 0; i < img->dataSize; i++) {
         int temp = img->data[i] + value;
@@ -85,13 +94,15 @@ void bmp8_brightness(t_bmp8 *img, int value) {
     }
 }
 
+// Threshold filter
 void bmp8_threshold(t_bmp8 *img, int threshold) {
     for (unsigned int i = 0; i < img->dataSize; i++) {
         img->data[i] = (img->data[i] >= threshold) ? 255 : 0;
     }
 }
 
-// === Convolution générique ===
+// Convolution filter (deepseek help sometimes)
+// This is used by all advanced filters
 void bmp8_applyFilter(t_bmp8 *img, float **kernel, int kernelSize) {
     int n = kernelSize / 2;
     unsigned char *newData = malloc(img->dataSize);
@@ -125,7 +136,7 @@ void bmp8_applyFilter(t_bmp8 *img, float **kernel, int kernelSize) {
     free(newData);
 }
 
-// === Filtres prédéfinis ===
+// === Predefined filters ===
 void bmp8_boxBlur(t_bmp8 *img) {
     float box[3][3] = {
         {1/9.f, 1/9.f, 1/9.f},
@@ -136,6 +147,7 @@ void bmp8_boxBlur(t_bmp8 *img) {
     bmp8_applyFilter(img, kernel, 3);
 }
 
+// Gaussian blur
 void bmp8_gaussianBlur(t_bmp8 *img) {
     float gauss[3][3] = {
         {1/16.f, 2/16.f, 1/16.f},
@@ -146,6 +158,7 @@ void bmp8_gaussianBlur(t_bmp8 *img) {
     bmp8_applyFilter(img, kernel, 3);
 }
 
+// Outline
 void bmp8_outline(t_bmp8 *img) {
     float outline[3][3] = {
         {-1, -1, -1},
@@ -156,6 +169,7 @@ void bmp8_outline(t_bmp8 *img) {
     bmp8_applyFilter(img, kernel, 3);
 }
 
+// Emboss
 void bmp8_emboss(t_bmp8 *img) {
     float emboss[3][3] = {
         {-2, -1, 0},
@@ -166,6 +180,7 @@ void bmp8_emboss(t_bmp8 *img) {
     bmp8_applyFilter(img, kernel, 3);
 }
 
+// Sharpen
 void bmp8_sharpen(t_bmp8 *img) {
     float sharpen[3][3] = {
         { 0, -1,  0},
