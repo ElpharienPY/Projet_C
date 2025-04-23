@@ -162,9 +162,9 @@ You can find in the zip file, another folder named `Projet_interface`
 
 During holidays, we follow some videos to create graphic interface.  
 I watch this :  
-[video 1]("https://www.youtube.com/watch?v=yX05p3FUmEA")    
-[video 2]("https://www.youtube.com/watch?v=Lwx9rSgwoDg&t=1460s")   
-[video 3]("https://www.youtube.com/watch?v=N5CZLSVU0DA&t=407s")  
+  [video 1]("https://www.youtube.com/watch?v=yX05p3FUmEA")    
+  [video 2]("https://www.youtube.com/watch?v=Lwx9rSgwoDg&t=1460s")   
+  [video 3]("https://www.youtube.com/watch?v=N5CZLSVU0DA&t=407s")  
 And I use CHATGPT to help me in the process of the main of the interface version
 
 
