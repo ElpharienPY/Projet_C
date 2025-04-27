@@ -85,7 +85,13 @@ Please choose an option:
 ...
 # BONUS
 
-You can find in the zip file, another folder named `Projet_interface`  
+You can find on Github page, another folder named `Projet_interface`. It was difficult to commit-push this file so you 
+can download it on this safety link:
+
+```bash
+  https://mega.nz/folder/HAVmgKKQ#P5vscf7kaJ6bDe70qVwpow
+  ```
+
 ### **May sure to open ALL files separately that the other** 
 1. Open the `Projet_interface` folder in CLion (or use CMake manually).
 2. Make sure SDL2 and SDL2_ttf libraries are accessible.
@@ -119,12 +125,12 @@ You can find in the zip file, another folder named `Projet_interface`
 
 | File             | Description                             |
 |------------------|-----------------------------------------|
-| `interface.c`    | SDL2 graphical interface + menu logic   |
+| `main.c`         | SDL2 graphical interface + menu logic   |
 | `bmp8.c/h`       | Image loading + filters for 8-bit BMP   |
 | `bmp24.c/h`      | Image loading + filters for 24-bit BMP  |
 | `CMakeLists.txt` | Project configuration for CLion / CMake |
 
-## In `interface.c` :
+## In `main.c` :
 
 ## ️ Controls
 
