@@ -11,6 +11,7 @@ int detectBitDepth(const char *filename) {
     fseek(f, 28, SEEK_SET);
     uint16_t bits;
     fread(&bits, sizeof(uint16_t), 1, f);
+    printf("DEBUG bits = %d\n", bits);
     fclose(f);
     return (bits == 8 || bits == 24) ? bits : -1;
 }
@@ -28,7 +29,8 @@ void applyFilters8(t_bmp8 *img) {
         printf("6. Outline\n");
         printf("7. Emboss\n");
         printf("8. Sharpen\n");
-        printf("9. Return to main menu\n");
+        printf("9. Histogram Equalization\n");
+        printf("10. Return to main menu\n");
         printf(">>> Your choice: ");
         scanf("%d", &choice);
         getchar();
@@ -56,7 +58,16 @@ void applyFilters8(t_bmp8 *img) {
             case 6: bmp8_outline(img); printf("Outline filter applied.\n"); break;
             case 7: bmp8_emboss(img); printf("Emboss filter applied.\n"); break;
             case 8: bmp8_sharpen(img); printf("Sharpen filter applied.\n"); break;
-            case 9: return; // Exit filter menu
+            case 9: {
+                unsigned int *hist = bmp8_computeHistogram(img);
+                unsigned int *cdf = bmp8_computeCDF(hist);
+                bmp8_equalize(img, cdf);
+                free(hist);
+                free(cdf);
+                printf("Histogram Equalization applied.\n");
+                break;
+            }
+            case 10: return; // Exit filter menu
             default: printf("Invalid option.\n");
         }
     }
@@ -75,7 +86,8 @@ void applyFilters24(t_bmp24 *img) {
         printf("6. Outline\n");
         printf("7. Emboss\n");
         printf("8. Sharpen\n");
-        printf("9. Return to main menu\n");
+        printf("9. Histogram Equalization\n");
+        printf("10. Return to main menu\n");
         printf(">>> Your choice: ");
         scanf("%d", &choice);
         getchar();
@@ -96,7 +108,12 @@ void applyFilters24(t_bmp24 *img) {
             case 6: bmp24_outline(img); printf("Outline filter applied.\n"); break;
             case 7: bmp24_emboss(img); printf("Emboss filter applied.\n"); break;
             case 8: bmp24_sharpen(img); printf("Sharpen filter applied.\n"); break;
-            case 9: return;
+            case 9: {
+                bmp24_equalize(img);
+                printf("Histogram Equalization applied.\n");
+                break;
+            }
+            case 10: return;
             default: printf("Invalid option.\n");
         }
     }
@@ -138,6 +155,7 @@ int main(void) {
 
                 // Detect BMP type (that was difficult to add the 2nd part, deepseek help to detect)
                 bits = detectBitDepth(filepath);
+                printf("DEBUG detected bits = %d\n", bits);
 
                 // Free any previously loaded image
                 if (img8) { bmp8_free(img8); img8 = NULL; }

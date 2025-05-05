@@ -38,4 +38,11 @@ void bmp24_outline(t_bmp24 *img);
 void bmp24_emboss(t_bmp24 *img);
 void bmp24_sharpen(t_bmp24 *img);
 
+// Part3
+unsigned int *bmp24_computeHistogramR(const t_bmp24 *img);
+unsigned int *bmp24_computeHistogramG(const t_bmp24 *img);
+unsigned int *bmp24_computeHistogramB(const t_bmp24 *img);
+void computeEqualizationLUT(unsigned int *hist, int totalPixels, uint8_t *lut);
+void bmp24_equalize(t_bmp24 *img);
+
 #endif // BMP24_H

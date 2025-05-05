@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
 
 // Allocate a 2D pixel matrix
 t_pixel **bmp24_allocateDataPixels(int width, int height) {
@@ -66,7 +67,7 @@ t_bmp24 *bmp24_loadImage(const char *filename) {
 
     // Validate BMP 24-bit uncompressed format
     if (type != 0x4D42 || bits != 24 || compression != 0) {
-        printf("Fichier incompatible. BMP 24 bits non compressé requis.\n");
+        printf("Incompatible file. BMP 24 bits must be uncompressed .\n");
         fclose(f);
         return NULL;
     }
@@ -108,7 +109,7 @@ t_bmp24 *bmp24_loadImage(const char *filename) {
 void bmp24_saveImage(t_bmp24 *img, const char *filename) {
     FILE *f = fopen(filename, "wb");
     if (!f) {
-        printf("Erreur écriture fichier %s\n", filename);
+        printf("Writing error  %s\n", filename);
         return;
     }
 
@@ -164,7 +165,7 @@ void bmp24_saveImage(t_bmp24 *img, const char *filename) {
     }
 
     fclose(f);
-    printf("Image enregistrée dans %s\n", filename);
+    printf("Image load in %s\n", filename);
 }
 
 // Filters: simple operations
@@ -293,3 +294,143 @@ void bmp24_sharpen(t_bmp24 *img) {
     float* kernel[3] = { sharpen[0], sharpen[1], sharpen[2] };
     bmp24_applyFilter(img, kernel, 3);
 }
+
+// RED channel
+unsigned int *bmp24_computeHistogramR(const t_bmp24 *img) {
+    unsigned int *hist=calloc(256, sizeof(unsigned int)); // We use calloc(256, sizeof(unsigned int)) to create an array of 256 integers (0-255 colour levels).
+    if (!hist) return 0;
+    for (int y = 0; y < img->height; y++) {
+        for (int x = 0; x < img->width; x++) { // Through each pixel
+            uint8_t r = img->data[y][x].red; // Extract red value
+            hist[r]++;
+        }
+    }
+    return hist;
+}
+
+// GREEN channel
+unsigned int *bmp24_computeHistogramG(const t_bmp24 *img) {
+    unsigned int *hist=calloc(256, sizeof(unsigned int)); // We use calloc(256, sizeof(unsigned int)) also
+    if (!hist) return 0;
+    for (int y = 0; y < img->height; y++) {
+        for (int x = 0; x < img->width; x++) { // Through each pixel
+            uint8_t g = img->data[y][x].green; // Extract green value here
+            hist[g]++;
+        }
+    }
+    return hist;
+}
+
+
+// BLUE channel
+unsigned int *bmp24_computeHistogramB(const t_bmp24 *img) {
+    unsigned int *hist=calloc(256, sizeof(unsigned int)); // And here finally
+    if (!hist) return 0;
+    for (int y = 0; y < img->height; y++) {
+        for (int x = 0; x < img->width; x++) { // Through each pixel
+            uint8_t b = img->data[y][x].blue; // Extract blue value
+            hist[b]++;
+        }
+    }
+    return hist;
+}
+
+void computeEqualizationLUT(unsigned int *hist, int total, uint8_t *lut) {
+    unsigned int cdf[256] = {0};
+    cdf[0] = hist[0];
+    for (int i = 1; i < 256; i++) {
+        cdf[i] = cdf[i - 1] + hist[i];
+    }
+
+    unsigned int cdf_min = 0;
+    for (int i = 0; i < 256; i++) {
+        if (cdf[i] != 0) {
+            cdf_min = cdf[i];
+            break;
+        }
+    }
+
+    for (int i = 0; i < 256; i++) {
+        if (total - cdf_min != 0)
+            lut[i] = (uint8_t)roundf(((float)(cdf[i] - cdf_min) / (total - cdf_min)) * 255);
+        else
+            lut[i] = 0;
+    }
+}
+
+void bmp24_equalize(t_bmp24 *img) {
+    int width = img->width;
+    int height = img->height;
+    int size = width * height;
+
+    // Allocation des buffers Y, U, V
+    float *Y = malloc(size * sizeof(float));
+    float *U = malloc(size * sizeof(float));
+    float *V = malloc(size * sizeof(float));
+
+    if (!Y || !U || !V) {
+        printf("Memory allocation failed.\n");
+        free(Y); free(U); free(V);
+        return;
+    }
+
+    // Étape 1 : conversion RGB → YUV
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            t_pixel p = img->data[y][x];
+            int i = y * width + x;
+
+            float r = p.red;
+            float g = p.green;
+            float b = p.blue;
+
+            Y[i] = 0.299f * r + 0.587f * g + 0.114f * b;
+            U[i] = -0.14713f * r - 0.28886f * g + 0.436f * b;
+            V[i] =  0.615f * r - 0.51499f * g - 0.10001f * b;
+        }
+    }
+
+    // Étape 2 : calcul histogramme et CDF sur Y (entiers 0–255)
+    unsigned int hist[256] = {0};
+    for (int i = 0; i < size; i++) {
+        int yval = (int)fminf(fmaxf(roundf(Y[i]), 0), 255);
+        hist[yval]++;
+    }
+
+    // CDF
+    unsigned int cdf[256] = {0};
+    cdf[0] = hist[0];
+    for (int i = 1; i < 256; i++) {
+        cdf[i] = cdf[i - 1] + hist[i];
+    }
+
+    // LUT de remapping
+    uint8_t map[256];
+    for (int i = 0; i < 256; i++) {
+        map[i] = (uint8_t)roundf(((float)(cdf[i] - cdf[0]) / (size - cdf[0])) * 255.0f);
+    }
+
+    // Étape 3 : reconstruction RGB depuis YUV (avec Y égalisé)
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            int i = y * width + x;
+
+            float y_eq = (float)map[(int)fminf(fmaxf(roundf(Y[i]), 0), 255)];
+            float u = U[i];
+            float v = V[i];
+
+            float r = y_eq + 1.13983f * v;
+            float g = y_eq - 0.39465f * u - 0.58060f * v;
+            float b = y_eq + 2.03211f * u;
+
+            img->data[y][x].red   = (uint8_t)fminf(fmaxf(r, 0), 255);
+            img->data[y][x].green = (uint8_t)fminf(fmaxf(g, 0), 255);
+            img->data[y][x].blue  = (uint8_t)fminf(fmaxf(b, 0), 255);
+        }
+    }
+
+    // Nettoyage
+    free(Y); free(U); free(V);
+    printf("Histogram Equalization (Y-channel) applied successfully.\n");
+}
+

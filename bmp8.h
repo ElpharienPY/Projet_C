@@ -34,4 +34,8 @@ void bmp8_outline(t_bmp8 *img);
 void bmp8_emboss(t_bmp8 *img);
 void bmp8_sharpen(t_bmp8 *img);
 
+// Part 3
+unsigned int *bmp8_computeHistogram(t_bmp8 *img);
+unsigned int *bmp8_computeCDF(unsigned int *hist);
+void bmp8_equalize(t_bmp8 *img, unsigned int *cdf);
 #endif // BMP8_H

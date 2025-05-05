@@ -3,6 +3,81 @@
 #include <stdlib.h>
 #include <math.h>
 
+unsigned int *bmp8_computeHistogram(t_bmp8 *img) {
+    unsigned int *hist = calloc(256, sizeof(unsigned int));
+    if (!hist) {
+        printf("Memory allocation failed for histogram.\n");
+        return NULL;
+    }
+
+    for (unsigned int i = 0; i < img->dataSize; i++) {
+        hist[img->data[i]]++;
+    }
+
+    return hist;
+}
+
+unsigned int *bmp8_computeCDF(unsigned int *hist) {
+    unsigned int *cdf = malloc(256 * sizeof(unsigned int));
+    if (!cdf) {
+        printf("Memory allocation failed for CDF.\n");
+        return NULL;
+    }
+
+    cdf[0] = hist[0];
+    for (int i = 1; i < 256; i++) {
+        cdf[i] = cdf[i - 1] + hist[i];
+    }
+
+    return cdf;
+}
+
+
+void bmp8_equalize(t_bmp8 *img, unsigned int *cdf) {
+    unsigned char map[256];
+    unsigned int totalPixels = img->width * img->height;
+
+    // Trouver le premier cdf non nul
+    unsigned int cdf_min = 0;
+    for (int i = 0; i < 256; i++) {
+        if (cdf[i] != 0) {
+            cdf_min = cdf[i];
+            break;
+        }
+    }
+
+    // DEBUG : Aperçu du CDF
+    printf("\n--- CDF Preview ---\n");
+    for (int i = 0; i < 256; i += 32) {
+        printf("cdf[%3d] = %u\n", i, cdf[i]);
+    }
+
+    // Créer la table de correspondance (LUT)
+    for (int i = 0; i < 256; i++) {
+        map[i] = (unsigned char) roundf(((float)(cdf[i] - cdf_min) / (totalPixels - cdf_min)) * 255.0f);
+    }
+
+    // DEBUG : Aperçu de la table de mappage
+    printf("\n--- LUT Mapping ---\n");
+    for (int i = 0; i < 256; i += 32) {
+        printf("map[%3d] = %d\n", i, map[i]);
+    }
+
+    // DEBUG : Exemples de valeurs de pixels avant/après
+    printf("\n--- Sample pixel values (first 10) ---\n");
+    for (int i = 0; i < 10; i++) {
+        unsigned char old = img->data[i];
+        unsigned char new = map[old];
+        printf("Pixel[%d]: %d -> %d\n", i, old, new);
+    }
+
+    // Appliquer la LUT à tous les pixels
+    for (unsigned int i = 0; i < img->dataSize; i++) {
+        img->data[i] = map[img->data[i]];
+    }
+}
+
+
 // Load 8-bit BMP image from file
 t_bmp8 *bmp8_loadImage(const char *filename) {
     FILE *f = fopen(filename, "rb");
