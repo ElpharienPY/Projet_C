@@ -37,7 +37,7 @@ void bmp8_equalize(t_bmp8 *img, unsigned int *cdf) {
     unsigned char map[256];
     unsigned int totalPixels = img->width * img->height;
 
-    // Trouver le premier cdf non nul
+    // Find the first cdf non equal to zero
     unsigned int cdf_min = 0;
     for (int i = 0; i < 256; i++) {
         if (cdf[i] != 0) {
@@ -46,24 +46,24 @@ void bmp8_equalize(t_bmp8 *img, unsigned int *cdf) {
         }
     }
 
-    // DEBUG : Aperçu du CDF
+    // DEBUG : a look of CDF
     printf("\n--- CDF Preview ---\n");
     for (int i = 0; i < 256; i += 32) {
         printf("cdf[%3d] = %u\n", i, cdf[i]);
     }
 
-    // Créer la table de correspondance (LUT)
+    // Create the correspondance of the table ( LUT)
     for (int i = 0; i < 256; i++) {
         map[i] = (unsigned char) roundf(((float)(cdf[i] - cdf_min) / (totalPixels - cdf_min)) * 255.0f);
     }
 
-    // DEBUG : Aperçu de la table de mappage
+    // DEBUG : A look of the mappage table
     printf("\n--- LUT Mapping ---\n");
     for (int i = 0; i < 256; i += 32) {
         printf("map[%3d] = %d\n", i, map[i]);
     }
 
-    // DEBUG : Exemples de valeurs de pixels avant/après
+    // DEBUG : Exemples before and after of pixels values
     printf("\n--- Sample pixel values (first 10) ---\n");
     for (int i = 0; i < 10; i++) {
         unsigned char old = img->data[i];
@@ -71,7 +71,7 @@ void bmp8_equalize(t_bmp8 *img, unsigned int *cdf) {
         printf("Pixel[%d]: %d -> %d\n", i, old, new);
     }
 
-    // Appliquer la LUT à tous les pixels
+    // Input the LUT to all the pixels
     for (unsigned int i = 0; i < img->dataSize; i++) {
         img->data[i] = map[img->data[i]];
     }
@@ -204,7 +204,7 @@ void bmp8_applyFilter(t_bmp8 *img, float **kernel, int kernelSize) {
         }
     }
 
-    // Remplacer ancienne image
+    // Remplacer the previous image
     for (unsigned int i = 0; i < img->dataSize; i++) {
         img->data[i] = newData[i];
     }

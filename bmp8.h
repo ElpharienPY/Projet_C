@@ -2,7 +2,7 @@
 #define BMP8_H
 
 
-// === Structure pour l'image BMP 8 bits ===
+// === The structure of the image BMP 8 bits ===
 typedef struct {
     unsigned char header[54];
     unsigned char colorTable[1024];

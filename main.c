@@ -6,20 +6,20 @@
 
 // Detect BMP bit depth (8 or 24)
 int detectBitDepth(const char *filename) {
-    FILE *f = fopen(filename, "rb");
-    if (!f) return -1;
+    FILE *f = fopen(filename, "rb"); //open file in binary mode
+    if (!f) return -1; //return error if file can't be opened
     fseek(f, 28, SEEK_SET);
     uint16_t bits;
     fread(&bits, sizeof(uint16_t), 1, f);
-    printf("DEBUG bits = %d\n", bits);
-    fclose(f);
+    printf("DEBUG bits = %d\n", bits);//read the bit depth"
+    fclose(f); //close the file
     return (bits == 8 || bits == 24) ? bits : -1;
 }
 
 // Filter menu for 8-bit images
 void applyFilters8(t_bmp8 *img) {
     int choice;
-    while (1) {
+    while (1) { // Infinte loop until user clicks return
         printf("\nChoose a filter to apply:\n");
         printf("1. Negative\n");
         printf("2. Brightness\n");
@@ -33,7 +33,7 @@ void applyFilters8(t_bmp8 *img) {
         printf("10. Return to main menu\n");
         printf(">>> Your choice: ");
         scanf("%d", &choice);
-        getchar();
+        getchar(); //consume newline character
 
         switch (choice) {
             case 1: bmp8_negative(img); printf("Negative applied.\n"); break;
@@ -122,14 +122,14 @@ void applyFilters24(t_bmp24 *img) {
 
 //Main
 int main(void) {
-    char filepath[256];
+    char filepath[256]; //buffer for file paths
     int choice ;
-    int bits = -1;
-
+    int bits = -1; // stores delected bit depth
+    // image pointers
     t_bmp8 *img8 = NULL;
     t_bmp24 *img24 = NULL;
 
-    while (1) {
+    while (1) { // main program loop
         // Display the main menu
         printf("\nPlease choose an option:\n");
         printf("1. Open an image\n");
