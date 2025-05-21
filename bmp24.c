@@ -363,7 +363,7 @@ void bmp24_equalize(t_bmp24 *img) {
     int height = img->height;
     int size = width * height;
 
-    // Allocation des buffers Y, U, V
+    // Buffer allocation Y, U, V
     float *Y = malloc(size * sizeof(float));
     float *U = malloc(size * sizeof(float));
     float *V = malloc(size * sizeof(float));
@@ -374,7 +374,7 @@ void bmp24_equalize(t_bmp24 *img) {
         return;
     }
 
-    // Étape 1 : conversion RGB → YUV
+    // sStep 1 : conversion RGB → YUV
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             t_pixel p = img->data[y][x];
@@ -390,7 +390,7 @@ void bmp24_equalize(t_bmp24 *img) {
         }
     }
 
-    // Étape 2 : calcul histogramme et CDF sur Y (entiers 0–255)
+    // Step 2 : compute the histogram and CDF on Y (integer 0–255)
     unsigned int hist[256] = {0};
     for (int i = 0; i < size; i++) {
         int y_val = (int)fminf(fmaxf(roundf(Y[i]), 0), 255);
@@ -404,13 +404,13 @@ void bmp24_equalize(t_bmp24 *img) {
         cdf[i] = cdf[i - 1] + hist[i];
     }
 
-    // LUT de remapping
+    // LUT of remapping
     uint8_t map[256];
     for (int i = 0; i < 256; i++) {
         map[i] = (uint8_t)roundf(((float)(cdf[i] - cdf[0]) / (size - cdf[0])) * 255.0f);
     }
 
-    // Étape 3 : reconstruction RGB depuis YUV (avec Y égalisé)
+    // Step 3 : reconstruction RGB depuis YUV (avec Y égalisé)
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             int i = y * width + x;
@@ -429,7 +429,7 @@ void bmp24_equalize(t_bmp24 *img) {
         }
     }
 
-    // Nettoyage
+    // cleaning
     free(Y); free(U); free(V);
     printf("Histogram Equalization (Y-channel) applied successfully.\n");
 }
