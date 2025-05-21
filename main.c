@@ -6,12 +6,12 @@
 
 // Detect BMP bit depth (8 or 24)
 int detectBitDepth(const char *filename) {
-    FILE *f = fopen(filename, "rb"); //open file in binary mode
-    if (!f) return -1; //return error if file can't be opened
+    FILE *f = fopen(filename, "rb"); // Open file in binary mode
+    if (!f) return -1; // Return error if file can't be opened
     fseek(f, 28, SEEK_SET);
     uint16_t bits;
     fread(&bits, sizeof(uint16_t), 1, f);
-    printf("DEBUG bits = %d\n", bits);//read the bit depth"
+    printf("DEBUG bits = %d\n", bits);// Read the bit depth
     fclose(f); //close the file
     return (bits == 8 || bits == 24) ? bits : -1;
 }
@@ -19,7 +19,7 @@ int detectBitDepth(const char *filename) {
 // Filter menu for 8-bit images
 void applyFilters8(t_bmp8 *img) {
     int choice;
-    while (1) { // Infinte loop until user clicks return
+    while (1) { // Infinite loop until user clicks return
         printf("\nChoose a filter to apply:\n");
         printf("1. Negative\n");
         printf("2. Brightness\n");
@@ -122,14 +122,14 @@ void applyFilters24(t_bmp24 *img) {
 
 //Main
 int main(void) {
-    char filepath[256]; //buffer for file paths
+    char filepath[256]; // Buffer for file paths
     int choice ;
-    int bits = -1; // stores delected bit depth
-    // image pointers
+    int bits = -1; // Stores detected byte depth
+    // Image pointers
     t_bmp8 *img8 = NULL;
     t_bmp24 *img24 = NULL;
 
-    while (1) { // main program loop
+    while (1) { // Main program loop
         // Display the main menu
         printf("\nPlease choose an option:\n");
         printf("1. Open an image\n");
@@ -143,7 +143,7 @@ int main(void) {
         char input[10];
         fgets(input, sizeof(input), stdin);
         if (sscanf(input, "%d", &choice) != 1) {
-            printf("Invalid option. Please choose 1 to 5.\n");  //Control input issues
+            printf("Invalid option. Please choose 1 to 5.\n");  // Control input issues
             continue;
         }
 
@@ -177,7 +177,7 @@ int main(void) {
                         bits = -1;
                     } else {
                         printf("24-bit image loaded successfully.\n");
-                        //Debug: use to solve many difficulties (show first pixel RGB values)
+                        // Debug: use to solve many difficulties (show first pixel RGB values)
                         printf("DEBUG – First pixel R=%d G=%d B=%d\n",
                         img24->data[0][0].red,
                         img24->data[0][0].green,
