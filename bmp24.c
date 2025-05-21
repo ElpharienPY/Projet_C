@@ -393,8 +393,8 @@ void bmp24_equalize(t_bmp24 *img) {
     // Étape 2 : calcul histogramme et CDF sur Y (entiers 0–255)
     unsigned int hist[256] = {0};
     for (int i = 0; i < size; i++) {
-        int yval = (int)fminf(fmaxf(roundf(Y[i]), 0), 255);
-        hist[yval]++;
+        int y_val = (int)fminf(fmaxf(roundf(Y[i]), 0), 255);
+        hist[y_val]++;
     }
 
     // CDF

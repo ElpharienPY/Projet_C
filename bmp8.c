@@ -89,36 +89,67 @@ t_bmp8 *bmp8_loadImage(const char *filename) {
     t_bmp8 *img = malloc(sizeof(t_bmp8));
     if (!img) {
         fclose(f);
+        printf("Memory allocation failed\n");
         return NULL;
     }
 
-    // Read the 54-byte BMP header
-    fread(img->header, sizeof(unsigned char), 54, f);
+    // Lecture du header BMP (54 octets)
+    if (fread(img->header, sizeof(unsigned char), 54, f) != 54) {
+        printf("Failed to read BMP header.\n");
+        free(img);
+        fclose(f);
+        return NULL;
+    }
 
-    // Extract image dimensions and metadata from header
-    img->width = *(unsigned int *)&img->header[18];
-    img->height = *(unsigned int *)&img->header[22];
-    img->colorDepth = *(unsigned short *)&img->header[28];
-    img->dataSize = *(unsigned int *)&img->header[34];
+    // Extraction des infos
+    img->width       = *(unsigned int *)&img->header[18];
+    img->height      = *(unsigned int *)&img->header[22];
+    img->colorDepth  = *(unsigned short *)&img->header[28];
+    img->dataSize    = *(unsigned int *)&img->header[34];
 
-    // Ensure it is a true 8-bit grayscale BMP
     if (img->colorDepth != 8) {
         printf("Only 8-bit grayscale BMP files are supported.\n");
-        fclose(f);
         free(img);
+        fclose(f);
         return NULL;
     }
 
-    // Read color table (1024 bytes for 256 shades of gray)
-    fread(img->colorTable, sizeof(unsigned char), 1024, f);
+    // Lecture de la palette (1024 octets)
+    if (fread(img->colorTable, sizeof(unsigned char), 1024, f) != 1024) {
+        printf("Failed to read color palette.\n");
+        free(img);
+        fclose(f);
+        return NULL;
+    }
 
-    // Read image pixel data
+    // Si dataSize est incorrect ou nul, on le recalcule
+    if (img->dataSize == 0) {
+        int rowSize = ((img->width + 3) / 4) * 4; // aligné sur 4 octets
+        img->dataSize = rowSize * img->height;
+    }
+
+    // Allocation des données pixel
     img->data = malloc(img->dataSize);
-    fread(img->data, sizeof(unsigned char), img->dataSize, f);
+    if (!img->data) {
+        printf("Failed to allocate memory for image data.\n");
+        free(img);
+        fclose(f);
+        return NULL;
+    }
+
+    // Lecture des données pixel
+    if (fread(img->data, sizeof(unsigned char), img->dataSize, f) != img->dataSize) {
+        printf("Failed to read pixel data.\n");
+        free(img->data);
+        free(img);
+        fclose(f);
+        return NULL;
+    }
 
     fclose(f);
     return img;
 }
+
 
 // Save image
 void bmp8_saveImage(const char *filename, t_bmp8 *img) {
@@ -128,13 +159,19 @@ void bmp8_saveImage(const char *filename, t_bmp8 *img) {
         return;
     }
 
-    // Write header, color table, and pixel data
+    // 1. Write the BMP header (54 bytes)
     fwrite(img->header, sizeof(unsigned char), 54, f);
+
+    // 2. Write the color table (1024 bytes for 256 grayscale values)
     fwrite(img->colorTable, sizeof(unsigned char), 1024, f);
+
+    // 3. Write the image data (size = dataSize)
     fwrite(img->data, sizeof(unsigned char), img->dataSize, f);
 
     fclose(f);
 }
+
+
 
 // Free all memory used by the image
 void bmp8_free(t_bmp8 *img) {
