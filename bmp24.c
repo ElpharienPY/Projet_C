@@ -410,7 +410,7 @@ void bmp24_equalize(t_bmp24 *img) {
         map[i] = (uint8_t)roundf(((float)(cdf[i] - cdf[0]) / (size - cdf[0])) * 255.0f);
     }
 
-    // Step 3 : reconstruction RGB depuis YUV (avec Y égalisé)
+    // Step 3 : rebuild RGB from YUV ( Y equalize)
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             int i = y * width + x;
