@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
-#include <time.h>
+
 
 // Allocate a 2D pixel matrix
 t_pixel **bmp24_allocateDataPixels(int width, int height) {
@@ -126,7 +126,7 @@ void bmp24_saveImage(t_bmp24 *img, const char *filename) {
     fwrite(&reserved, sizeof(uint16_t), 1, f);
     fwrite(&offset, sizeof(uint32_t), 1, f);
 
-    // Écriture info header (40 octets)
+    // Write header info (40 octets)
     uint32_t headerSize = 40;
     uint16_t planes = 1;
     uint16_t bits = 24;
@@ -404,13 +404,13 @@ void bmp24_equalize(t_bmp24 *img) {
         cdf[i] = cdf[i - 1] + hist[i];
     }
 
-    // LUT of remapping
+    // LUT from remapping
     uint8_t map[256];
     for (int i = 0; i < 256; i++) {
         map[i] = (uint8_t)roundf(((float)(cdf[i] - cdf[0]) / (size - cdf[0])) * 255.0f);
     }
 
-    // Step 3 : rebuild RGB from YUV ( Y equalize)
+    // Step 3 : rebuild RGB from YUV
     for (int y = 0; y < height; y++) {
         for (int x = 0; x < width; x++) {
             int i = y * width + x;
@@ -429,7 +429,7 @@ void bmp24_equalize(t_bmp24 *img) {
         }
     }
 
-    // cleaning
+    // clean up
     free(Y); free(U); free(V);
     printf("Histogram Equalization (Y-channel) applied successfully.\n");
 }

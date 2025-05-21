@@ -64,7 +64,7 @@ void bmp8_equalize(t_bmp8 *img, unsigned int *cdf) {
         printf("map[%3d] = %d\n", i, map[i]);
     }
 
-    // DEBUG : Exemples before and after of pixels values
+    // DEBUG : Examples before and after of pixels values
     printf("\n--- Sample pixel values (first 10) ---\n");
     for (int i = 0; i < 10; i++) {
         unsigned char old = img->data[i];
@@ -94,7 +94,7 @@ t_bmp8 *bmp8_loadImage(const char *filename) {
         return NULL;
     }
 
-    // Lecture du header BMP (54 octets)
+    // Reading header BMP (54 octets)
     if (fread(img->header, sizeof(unsigned char), 54, f) != 54) {
         printf("Failed to read BMP header.\n");
         free(img);
@@ -102,7 +102,7 @@ t_bmp8 *bmp8_loadImage(const char *filename) {
         return NULL;
     }
 
-    // Extraction des infos
+    // Extract data
     img->width       = *(unsigned int *)&img->header[18];
     img->height      = *(unsigned int *)&img->header[22];
     img->colorDepth  = *(unsigned short *)&img->header[28];
@@ -115,7 +115,7 @@ t_bmp8 *bmp8_loadImage(const char *filename) {
         return NULL;
     }
 
-    // Lecture de la palette (1024 octets)
+    // Read (1024 octets)
     if (fread(img->colorTable, sizeof(unsigned char), 1024, f) != 1024) {
         printf("Failed to read color palette.\n");
         free(img);
@@ -123,13 +123,13 @@ t_bmp8 *bmp8_loadImage(const char *filename) {
         return NULL;
     }
 
-    // Si dataSize est incorrect ou nul, on le recalcule
+    // If dataSize is incorrect or null, we re-calcule
     if (img->dataSize == 0) {
-        int rowSize = ((img->width + 3) / 4) * 4; // aligné sur 4 octets
+        int rowSize = ((img->width + 3) / 4) * 4; // on 4 octets
         img->dataSize = rowSize * img->height;
     }
 
-    // Allocation des données pixel
+    // Allocation of pixel data
     img->data = malloc(img->dataSize);
     if (!img->data) {
         printf("Failed to allocate memory for image data.\n");
@@ -138,7 +138,7 @@ t_bmp8 *bmp8_loadImage(const char *filename) {
         return NULL;
     }
 
-    // Lecture des données pixel
+    // Read pixels data
     if (fread(img->data, sizeof(unsigned char), img->dataSize, f) != img->dataSize) {
         printf("Failed to read pixel data.\n");
         free(img->data);
@@ -243,14 +243,14 @@ void bmp8_applyFilter(t_bmp8 *img, float **kernel, int kernelSize) {
         }
     }
 
-    // Remplacer the previous image
+    // Replace the previous image
     for (unsigned int i = 0; i < img->dataSize; i++) {
         img->data[i] = newData[i];
     }
     free(newData);
 }
 
-// === Predefined filters ===
+// Predefined filters
 void bmp8_boxBlur(t_bmp8 *img) {
     float box[3][3] = {
         {1/9.f, 1/9.f, 1/9.f},
