@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <math.h>
 
+
 unsigned int *bmp8_computeHistogram(t_bmp8 *img) {
     unsigned int *hist = calloc(256, sizeof(unsigned int));
     if (!hist) {
@@ -37,7 +38,7 @@ void bmp8_equalize(t_bmp8 *img, unsigned int *cdf) {
     unsigned char map[256];
     unsigned int totalPixels = img->width * img->height;
 
-    // Find the first cdf non equal to zero
+    // Find the first cdf not equal to zero
     unsigned int cdf_min = 0;
     for (int i = 0; i < 256; i++) {
         if (cdf[i] != 0) {
