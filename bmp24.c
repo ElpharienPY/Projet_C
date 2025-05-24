@@ -165,7 +165,7 @@ void bmp24_saveImage(t_bmp24 *img, const char *filename) {
     }
 
     fclose(f);
-    printf("Image load successfully in %s\n", filename);
+    printf("Image save successfully in %s\n", filename);
 }
 
 // Filters: simple operations

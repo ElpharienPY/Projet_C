@@ -169,7 +169,7 @@ void bmp8_saveImage(const char *filename, t_bmp8 *img) {
     // 3. Write the image data (size = dataSize)
     fwrite(img->data, sizeof(unsigned char), img->dataSize, f);
 
-    printf("Image load successfully in %s\n", filename);
+    printf("Image save successfully in %s\n", filename);
     fclose(f);
 }
 
