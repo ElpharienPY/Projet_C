@@ -26,13 +26,16 @@ Two interfaces are available:
 - `bmp24.c` / `bmp24.h` — 24-bit BMP image handling and filters
 - `interface.c` — SDL2 graphical version
 - `CMakeLists.txt` — Build configuration for Clion / SDL2
+- `test` — Folder contains visual results and debugging screenshots for each filter and feature implemented during the project, including before/after comparisons and development issues.
+- `img` — Folder where you can find some images
+- `output` — Folder used to store output images
 
 ---
 
 ## Implemented Data Structures
 
 - `t_bmp8` — Structure for 8-bit BMP images (header, palette, data)
-- `t_bmp24` — Structure for 24-bit BMP images (width, height, bit depth, pixel matrix)
+- `t_bmp24` — Structure for 24-bit BMP images (width, height, byte depth, pixel matrix)
 - `t_pixel` — Structure representing an RGB pixel
 - LUTs, histograms, cumulative distribution functions (CDF), convolution buffers
 
@@ -57,7 +60,7 @@ Two interfaces are available:
 ### 24-bit RGB BMP Images
 
 - Load uncompressed 24-bit BMP files
-- Display image metadata (width, height, bit depth)
+- Display image metadata (width, height, byte depth)
 - Apply filters:
   -  Negative
   -  Grayscale conversion
@@ -84,7 +87,7 @@ Two interfaces are available:
 
 ## Missing Features
 
-- None: All requested functionalities have been implemented
+- All requested features, including histogram equalization and edge detection, have been implemented
 
 ---
 
@@ -92,7 +95,7 @@ Two interfaces are available:
 
 - If the image is larger than the SDL2 window, slight blurring may occur due to scaling
 - Image paths are typed in the **console**, not the SDL window
-- Save function or both bmp images types (corrupted images/black images everytime we save)
+- The save function sometimes produces corrupted or black images, for both 8-bit and 24-bit formats.
 - Gestion of RGB in the part 3 (can see the folder "test" to see each issues with test-images )
 - Writing the path in the console for the Interface version too (not in the window is much complex)
 - If the image is larger than the SDL2 window, slight blurring may occur due to scaling
@@ -146,7 +149,7 @@ gcc main.c bmp8.c bmp24.c -o bmpfilter -lm
 
 ---
 
-## Répartition des tâches
+## Task distribution
 
 **Bramli Youssef**
 - Part 1 and text readme
