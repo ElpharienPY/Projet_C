@@ -112,7 +112,7 @@ gcc main.c bmp8.c bmp24.c -o bmpfilter -lm
 
 ### SDL2 Version
 
-- Open the `Projet_interface` folder
+- Open the `Projet_interface` folder in Clion
 - Ensure SDL2 and SDL2_ttf are present in the `modules` folder
 
 ```bash
