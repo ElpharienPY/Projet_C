@@ -24,7 +24,6 @@ Two interfaces are available:
 - `main.c` — Terminal user interface
 - `bmp8.c` / `bmp8.h` — 8-bit BMP image handling and filters
 - `bmp24.c` / `bmp24.h` — 24-bit BMP image handling and filters
-- `interface.c` — SDL2 graphical version
 - `CMakeLists.txt` — Build configuration for Clion / SDL2
 - `test` — Folder contains visual results and debugging screenshots for each filter and feature implemented during the project, including before/after comparisons and development issues.
 - `img` — Folder where you can find some images
