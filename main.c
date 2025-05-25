@@ -129,6 +129,9 @@ int main(void) {
     t_bmp8 *img8 = NULL;
     t_bmp24 *img24 = NULL;
 
+    printf("\n");
+    printf("Welcome to the image editing app \n");
+
     while (1) { // Main program loop
         // Display the main menu
         printf("\nPlease choose an option:\n");
